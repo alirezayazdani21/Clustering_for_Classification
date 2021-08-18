@@ -20,8 +20,10 @@ from sklearn.datasets import make_classification
 # In[3]:
 
 
-#data =load_breast_cancer()
+from sklearn.datasets import make_classification
+
 w=.97
+
 X, y = make_classification(n_samples=5000,n_classes=2,n_features=15, random_state=123, n_clusters_per_class=1, weights=[w])
 
 
@@ -51,6 +53,8 @@ from sklearn.ensemble import RandomForestClassifier
 
 # In[8]:
 
+
+from sklearn.ensemble import RandomForestClassifier
 
 clf = RandomForestClassifier(max_depth=2, random_state=42, class_weight='balanced').fit(X,y)
 
@@ -202,7 +206,7 @@ from sklearn.neighbors import LocalOutlierFactor
 LOCOUT_clus = LocalOutlierFactor(n_neighbors=10).fit(X_train)
 LOCOUT_clus_preds=pd.DataFrame(LOCOUT_clus.fit_predict(X_train))
 LOCOUT_clus_preds=LOCOUT_clus_preds.replace(1, 0).replace(-1,1)
-#LOCOUT_clus_preds.value_counts()
+LOCOUT_clus_preds.value_counts()
 
 
 # In[28]:
@@ -220,10 +224,11 @@ DBSC_clus_preds=pd.DataFrame(DBSC_clus.fit_predict(X_train))
 DBSC_clus_preds=DBSC_clus_preds.replace(1, 0).replace(-1,1)
 
 
-# In[30]:
+# In[34]:
 
 
 DBSC_clus_preds.value_counts()
+LOCOUT_clus_preds.value_counts()
 
 
 # In[31]:
@@ -232,112 +237,82 @@ DBSC_clus_preds.value_counts()
 #clus_preds
 
 
-# In[32]:
-
-
-finals_preds= pd.concat([clf_preds,clf_pred_probs,ISFOR_clus_preds,SP_clus_preds,SVM_clus_preds,KMEANS_clus_preds,LOCOUT_clus_preds, DBSC_clus_preds],axis=1)
-finals_preds.columns=['clf_class','clf_score', 'ISFOR','SP','SVM','KMEANS','LOCOUT','DBSC']
-finals_preds
-
-
-# In[33]:
-
-
-finals_preds['ENS']= finals_preds[['ISFOR','SP','SVM','KMEANS','LOCOUT']].mode(axis=1,numeric_only=True)
-finals_preds
-
-
-# In[34]:
-
-
-finals_preds['clf_class']
-
-
-# In[35]:
-
-
-finals_preds['ENS']
-
-
-# In[36]:
-
-
-confusion_matrix(finals_preds['clf_class'],finals_preds['ENS'])
-
-
-# In[37]:
-
-
-def cluster_scores(cls):
-    ACC,ROC=[round(accuracy_score(finals_preds['clf_class'],finals_preds[cls]),2) , 
-       round(roc_auc_score(finals_preds['clf_class'],finals_preds[cls]),2)]
-    return print(cls, 'metrics are:', 'Accuracy=',ACC, 'and', 'ROC=',ROC)
-
-
 # In[38]:
 
 
-cluster_scores('ENS')
-
-
-# In[39]:
-
-
-cluster_scores('ISFOR')
-
-
-# In[40]:
-
-
-cluster_scores('SP')
-
-
-# In[41]:
-
-
-cluster_scores('LOCOUT')
-
-
-# In[42]:
-
-
-cluster_scores('DBSC')
-
-
-# In[43]:
-
-
-cluster_scores('SVM')
-
-
-# In[44]:
-
-
-cluster_scores('KMEANS')
-
-
-# In[45]:
-
-
-sn.boxplot(x="ENS",y="clf_score",data=finals_preds);
+finals_preds= pd.concat([clf_preds,clf_pred_probs,ISFOR_clus_preds,SP_clus_preds,SVM_clus_preds,KMEANS_clus_preds,LOCOUT_clus_preds, DBSC_clus_preds],axis=1)
+finals_preds.columns=['clf_class','clf_score', 'ISOFOR','SPECTR','SVM-1C','KMEANS','LOCOUT','DBSCAN']
+finals_preds
 
 
 # In[46]:
 
 
-#sn.boxplot(x="clf_class",y="clf_score",data=finals_preds);
+finals_preds['ENSEMB']= finals_preds[['ISOFOR','SPECTR','SVM-1C','KMEANS','LOCOUT']].mode(axis=1)
+finals_preds
 
 
 # In[47]:
 
 
-#finals_preds.describe()
+finals_preds['clf_class']
 
 
 # In[48]:
 
 
-cm = confusion_matrix(finals_preds['clf_class'],finals_preds['ENS'])
+finals_preds['ENSEMB']
+
+
+# In[49]:
+
+
+confusion_matrix(finals_preds['clf_class'],finals_preds['ENSEMB'])
+
+
+# In[50]:
+
+
+def cluster_scores(cls):
+    ACC,ROC=[round(accuracy_score(finals_preds['clf_class'],finals_preds[cls]),2) , 
+       round(roc_auc_score(finals_preds['clf_class'],finals_preds[cls]),2)]
+    return print(cls, ': Acc=',ACC, '&', 'ROC=',ROC)
+
+
+# In[72]:
+
+
+print(cluster_scores('ISOFOR'),
+      cluster_scores('SPECTR'),
+      cluster_scores('LOCOUT'),
+      cluster_scores('SVM-1C'),
+      cluster_scores('DBSCAN'),
+      cluster_scores('KMEANS'),
+      cluster_scores('ENSEMB'))
+
+
+# In[63]:
+
+
+sn.boxplot(x="ENSEMB",y="clf_score",data=finals_preds);
+
+
+# In[64]:
+
+
+#sn.boxplot(x="clf_class",y="clf_score",data=finals_preds);
+
+
+# In[65]:
+
+
+#finals_preds.describe()
+
+
+# In[67]:
+
+
+cm = confusion_matrix(finals_preds['clf_class'],finals_preds['ENSEMB'])
 disp = ConfusionMatrixDisplay(confusion_matrix=cm)
 disp.plot()
 plt.title('Confusion matrix of the clustering');
